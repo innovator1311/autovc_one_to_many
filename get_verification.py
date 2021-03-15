@@ -5,6 +5,13 @@ from hparam import hparam as hp
 from speech_embedder_net import SpeechEmbedder
 from VAD_segments import VAD_chunk
 
+import torch
+import librosa
+import math
+
+import numpy as np
+
+
 encoder = SpeechEmbedder()
 encoder.load_state_dict(torch.load("speaker_verification/final_epoch_950_batch_id_103.model"))
 encoder.eval()

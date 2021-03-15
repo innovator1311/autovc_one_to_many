@@ -52,7 +52,7 @@ for speaker in sorted(subdirList):
         
         #Verification Pytorch
         try:
-            audio_path = "../vivos_only_wavs/{}/{}.wav".format(speaker,fileList[idx_uttrs[i]][:-4])
+            audio_path = "vivos_only_wavs/{}/{}.wav".format(speaker,fileList[idx_uttrs[i]][:-4])
             emb = get_verification_pytorch(audio_path)
 
             if np.isnan(np.sum(emb)): 
@@ -72,5 +72,5 @@ for speaker in sorted(subdirList):
         utterances.append(os.path.join(speaker,fileName))
     speakers.append(utterances)
     
-with open(os.path.join(rootDir, 'train_speaker_embed.pkl'), 'wb') as handle:
+with open(os.path.join(rootDir, 'train.pkl'), 'wb') as handle:
     pickle.dump(speakers, handle)
