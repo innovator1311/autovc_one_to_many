@@ -36,7 +36,7 @@ ref_name = ref_audio.split("/")[-1][:-4]
 ### GENERATE MEL
 mel_org = makeSpect(original_audio, None)
 mel_ref = makeSpect(ref_audio, None)
-emb_ref = get_verification_pytorch(ref_audio)
+emb_ref = torch.FloatTensor(get_verification_pytorch(ref_audio)).unsqueeze(0).to("cuda")
 ###
 
 def pad_seq(x, base=32):
