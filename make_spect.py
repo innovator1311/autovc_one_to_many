@@ -57,13 +57,8 @@ mel_basis = mel(16000, 1024, fmin=90, fmax=7600, n_mels=80).T
 min_level = np.exp(-100 / 20 * np.log(10))
 b, a = butter_highpass(30, 16000, order=5)
 
-if __name__ == "__main__":
 
-    # audio file directory
-    rootDir = './wavs'
-    # spectrogram directory
-    targetDir = './spmel'
-
+def generateMel(rootDir, targetDir):
 
     dirName, subdirList, _ = next(os.walk(rootDir))
     print('Found directory: %s' % dirName)
@@ -83,4 +78,19 @@ if __name__ == "__main__":
             S = makeSpect(full_path, prng)
             np.save(os.path.join(targetDir, subdir, fileName[:-4]),
                     S.astype(np.float32), allow_pickle=False)    
+
+
+
+if __name__ == "__main__":
+
+    # audio file directory
+    #rootDir = './wavs'
+    # spectrogram directory
+    #targetDir = './spmel'
+
+    generateMel("./wavs","./spmel")
+    generateMel("./wavs_taco","./spmel_taco")
+
+
+    
         

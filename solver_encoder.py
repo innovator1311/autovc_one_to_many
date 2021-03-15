@@ -70,14 +70,14 @@ class Solver(object):
 
             # Fetch data.
             try:
-                x_real, emb_org = next(data_iter)
+                x_init, x_real, emb_ref = next(data_iter)
             except:
                 data_iter = iter(data_loader)
-                x_real, emb_org = next(data_iter)
+                x_init, x_real, emb_ref = next(data_iter)
             
-            
+            x_init = x_init.to(self.device) 
             x_real = x_real.to(self.device) 
-            emb_org = emb_org.to(self.device) 
+            emb_ref = emb_ref.to(self.device) 
                         
        
             # =================================================================================== #
@@ -87,7 +87,7 @@ class Solver(object):
             self.G = self.G.train()
                         
             # Identity mapping loss
-            x_identic, x_identic_psnt, code_real = self.G(x_real, emb_org, emb_org)
+            x_identic, x_identic_psnt, code_real = self.G(x_init, emb_ref)
             x_identic = x_identic.squeeze()
             x_identic_psnt = x_identic_psnt.squeeze()
             
@@ -95,7 +95,7 @@ class Solver(object):
             g_loss_id_psnt = F.mse_loss(x_real, x_identic_psnt)   
             
             # Code semantic loss.
-            code_reconst = self.G(x_identic_psnt, emb_org, None)
+            code_reconst = self.G(x_real, None)
             g_loss_cd = F.l1_loss(code_real, code_reconst)
 
 

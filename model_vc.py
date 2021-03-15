@@ -41,7 +41,7 @@ class ConvNorm(torch.nn.Module):
 class Encoder(nn.Module):
     """Encoder module:
     """
-    def __init__(self, dim_neck, dim_emb, freq):
+    def __init__(self, dim_neck, freq):
         super(Encoder, self).__init__()
         self.dim_neck = dim_neck
         self.freq = freq
@@ -49,7 +49,7 @@ class Encoder(nn.Module):
         convolutions = []
         for i in range(3):
             conv_layer = nn.Sequential(
-                ConvNorm(80+dim_emb if i==0 else 512,
+                ConvNorm(80 if i==0 else 512,
                          512,
                          kernel_size=5, stride=1,
                          padding=2,
@@ -60,10 +60,8 @@ class Encoder(nn.Module):
         
         self.lstm = nn.LSTM(512, dim_neck, 2, batch_first=True, bidirectional=True)
 
-    def forward(self, x, c_org):
+    def forward(self, x):
         x = x.squeeze(1).transpose(2,1)
-        c_org = c_org.unsqueeze(-1).expand(-1, -1, x.size(-1))
-        x = torch.cat((x, c_org), dim=1)
         
         for conv in self.convolutions:
             x = F.relu(conv(x))
@@ -174,14 +172,13 @@ class Generator(nn.Module):
     def __init__(self, dim_neck, dim_emb, dim_pre, freq):
         super(Generator, self).__init__()
         
-        self.encoder = Encoder(dim_neck, dim_emb, freq)
+        self.encoder = Encoder(dim_neck, freq)
         self.decoder = Decoder(dim_neck, dim_emb, dim_pre)
-        self.embed_linear = nn.Linear(400, 256)
         self.postnet = Postnet()
 
-    def forward(self, x, c_org, c_trg):
+    def forward(self, x, c_trg):
                 
-        codes = self.encoder(x, c_org)
+        codes = self.encoder(x)
         if c_trg is None:
             return torch.cat(codes, dim=-1)
         
@@ -190,11 +187,6 @@ class Generator(nn.Module):
             tmp.append(code.unsqueeze(1).expand(-1,int(x.size(1)/len(codes)),-1))
         code_exp = torch.cat(tmp, dim=1)
         
-        ### change dim from 400 -> 256
-        #c_trg = self.embed_linear(c_trg)
-        #c_org = self.embed_linear(c_org)
-        ###
-
         encoder_outputs = torch.cat((code_exp, c_trg.unsqueeze(1).expand(-1,x.size(1),-1)), dim=-1)
         
         mel_outputs = self.decoder(encoder_outputs)

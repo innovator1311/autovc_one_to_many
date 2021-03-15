@@ -10,8 +10,9 @@ from multiprocessing import Process, Manager
 class Utterances(data.Dataset):
     """Dataset class for the Utterances dataset."""
 
-    def __init__(self, root_dir, len_crop):
+    def __init__(self, init_root_dir, root_dir, len_crop):
         """Initialize and preprocess the Utterances dataset."""
+        self.init_root_dir = init_root_dir
         self.root_dir = root_dir
         self.len_crop = len_crop
         self.step = 10
@@ -45,7 +46,10 @@ class Utterances(data.Dataset):
                 if j < 2:  # fill in speaker id and embedding
                     uttrs[j] = tmp
                 else: # load the mel-spectrograms
-                    uttrs[j] = np.load(os.path.join(self.root_dir, tmp))
+                    uttrs[j] = [
+                        np.load(os.path.join(self.init_root_dir, tmp)),
+                        np.load(os.path.join(self.root_dir, tmp))
+                    ]
             dataset[idx_offset+k] = uttrs
                    
         
@@ -57,7 +61,14 @@ class Utterances(data.Dataset):
         
         # pick random uttr with random crop
         a = np.random.randint(2, len(list_uttrs))
-        tmp = list_uttrs[a]
+        tmp_init, tmp_ref = list_uttrs[a][0], list_uttrs[a][1]
+        
+        uttr_init, uttr_ref = self.__resize__(tmp_init, tmp_ref)
+
+        return uttr_init, uttr_ref, emb_org
+
+    def __resize__(self, tmp):
+
         if tmp.shape[0] < self.len_crop:
             len_pad = self.len_crop - tmp.shape[0]
             uttr = np.pad(tmp, ((0,len_pad),(0,0)), 'constant')
@@ -66,8 +77,9 @@ class Utterances(data.Dataset):
             uttr = tmp[left:left+self.len_crop, :]
         else:
             uttr = tmp
-        
-        return uttr, emb_org
+
+        return uttr
+
     
 
     def __len__(self):
@@ -77,10 +89,10 @@ class Utterances(data.Dataset):
     
     
 
-def get_loader(root_dir, batch_size=16, len_crop=128, num_workers=0):
+def get_loader(init_root_dir, root_dir, batch_size=16, len_crop=128, num_workers=0):
     """Build and return a data loader."""
     
-    dataset = Utterances(root_dir, len_crop)
+    dataset = Utterances(init_root_dir, root_dir, len_crop)
     
     worker_init_fn = lambda x: np.random.seed((torch.initial_seed()) % (2**32))
     data_loader = data.DataLoader(dataset=dataset,
